@@ -298,11 +298,8 @@
                 </button>
             </div>
 
-            <!-- Bottom actions -->
+            <!-- Bottom actions (only finish button remains) -->
             <div class="flex justify-center gap-3 mt-6 flex-wrap">
-                <button id="submitBtn" onclick="submitAnswer()" class="hidden bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 text-sm sm:text-base">
-                    <i class="fas fa-check-circle mr-2"></i> Kunci Jawaban
-                </button>
                 <button id="finishBtn" onclick="finishQuiz()" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95 text-sm sm:text-base">
                     <i class="fas fa-flag-checkered mr-2"></i> Selesai / Lihat Hasil
                 </button>
@@ -1252,8 +1249,8 @@
             secondsElapsed = 0;
             document.getElementById('categoryScreen').classList.add('hidden');
             document.getElementById('resultsScreen').classList.add('hidden');
-            document.getElementById('reviewList').classList.add('hidden');
             document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('reviewList').classList.add('hidden');
             document.getElementById('reviewList').innerHTML = '';
             updateHeader();
             renderProgressDots();
@@ -1329,7 +1326,6 @@
             const question = bank.questions[currentQuestionIndex];
             const container = document.getElementById('optionsContainer');
             const explanationBox = document.getElementById('explanationBox');
-            const submitBtn = document.getElementById('submitBtn');
             const questionText = document.getElementById('questionText');
 
             questionText.innerHTML = question.q;
@@ -1370,7 +1366,6 @@
             container.innerHTML = optionsHTML;
 
             if (answerLocked[currentQuestionIndex]) {
-                submitBtn.classList.add('hidden');
                 explanationBox.classList.remove('hidden');
                 const isCorrect = userAnswers[currentQuestionIndex] === question.correct;
                 explanationBox.className = 'explanation-box rounded-xl p-4 text-sm mt-5 ' + (isCorrect ?
@@ -1378,7 +1373,6 @@
                 explanationBox.innerHTML = (isCorrect ?
                     '<strong>✅ Benar!</strong> ' : '<strong>❌ Salah!</strong> ') + question.expl;
             } else {
-                submitBtn.classList.remove('hidden');
                 explanationBox.classList.add('hidden');
             }
 
@@ -1389,31 +1383,13 @@
             renderProgressDots();
         }
 
+        // MODIFIED: directly lock answer when an option is selected
         function selectOption(index) {
             if (answerLocked[currentQuestionIndex] || quizFinished) return;
+            // Jika belum ada pilihan sebelumnya, langsung kunci setelah memilih
             userAnswers[currentQuestionIndex] = index;
-            renderQuestion();
-        }
-
-        function submitAnswer() {
-            if (answerLocked[currentQuestionIndex] || quizFinished) return;
-            if (userAnswers[currentQuestionIndex] === undefined) {
-                // Shake the question card to indicate no answer selected
-                const card = document.getElementById('questionCard');
-                card.classList.add('animate-shake');
-                setTimeout(() => card.classList.remove('animate-shake'), 500);
-                alert('⚠️ Pilih jawaban terlebih dahulu sebelum mengunci!');
-                return;
-            }
             answerLocked[currentQuestionIndex] = true;
             renderQuestion();
-            // Auto-advance after short delay
-            const bank = questionBanks[currentCategory];
-            if (currentQuestionIndex < bank.questions.length - 1) {
-                setTimeout(() => {
-                    nextQuestion();
-                }, 800);
-            }
         }
 
         function nextQuestion() {
@@ -1610,11 +1586,7 @@
             if (!currentCategory || quizFinished) return;
             if (e.key === 'ArrowLeft') prevQuestion();
             if (e.key === 'ArrowRight') nextQuestion();
-            if (e.key === 'Enter' && !answerLocked[currentQuestionIndex] && userAnswers[
-                    currentQuestionIndex] !== undefined) {
-                submitAnswer();
-            }
-            // Number keys to select options
+            // Number keys to select options (only if not locked)
             if (!answerLocked[currentQuestionIndex]) {
                 const num = parseInt(e.key);
                 if (num >= 1 && num <= 5) selectOption(num - 1);
